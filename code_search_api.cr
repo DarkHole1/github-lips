@@ -43,6 +43,7 @@ module CodeSearch
       when .forbidden?
         Forbidden.from_json response.body
       else
+        ::Log.error { "Unknown status: #{response.status}, #{response.body}" }
         Error.new
       end
     end
