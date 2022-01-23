@@ -1,0 +1,8 @@
+name: last-indexed-picture
+version: v0.0.1
+dependencies:
+  tourmaline:
+    github: protoncr/tourmaline
+    branch: master
+  tasker:
+    github: spider-gazelle/tasker
