@@ -17,9 +17,14 @@ at_exit {
 }
 
 schedule = Tasker.instance
-schedule.every(60.seconds) do
+schedule.every(1.minutes) do
   ::Log.info { "Posting to channel" }
-  result = api.search "extension:jpg extension:png size:>5000", per_page: 100, sort: "indexed"
+  begin
+    result = api.search "extension:jpg extension:png size:>5000", per_page: 100, sort: "indexed"
+  rescue e
+    ::Log.error(exception: e) { "Can't search :(" }
+  end
+
   case result
   when CodeSearch::Result
     ::Log.info { "Get #{result.items.size} images" }
@@ -38,7 +43,14 @@ schedule.every(60.seconds) do
     if images.size > 0
       ::Log.info { "Sending #{images.size} photos" }
       images.each_slice(10) { |some_images|
-        bot.send_media_group(CHANNEL, some_images)
+        ::Log.info { "Starting sending #{some_images.size}" }
+        begin
+          bot.send_media_group(CHANNEL, some_images)
+        rescue e
+          ::Log.error(exception: e) { "Can't send :(" }
+        end
+        ::Log.info { "Sent some images #{some_images.size}" }
+        sleep 30.seconds
       }
     end
   else
