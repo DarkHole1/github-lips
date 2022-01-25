@@ -19,9 +19,9 @@ schedule.every(30.seconds) do
   case result
   when CodeSearch::Result
     ::Log.info { "Get #{result.items.size} images" }
+    images = Array(Tourmaline::InputMediaPhoto).new
     result.items.each { |image|
       if sent_images_hashes.includes? image.sha
-        ::Log.info { "Drop image (sha) #{image.path}"}
         next
       end
       sent_images_hashes << image.sha
@@ -31,8 +31,13 @@ schedule.every(30.seconds) do
         TLink.new("repository", image.repository.html_url),
         indent: 0
       )
-      bot.send_photo(CHANNEL, image.raw_url, caption: caption.to_html, parse_mode: :html)
+      # bot.send_photo(CHANNEL, image.raw_url, caption: caption.to_html, parse_mode: :html)
+      images << Tourmaline::InputMediaPhoto.new(image.raw_url, caption: caption.to_html, parse_mode: :html)
     }
+    if images.size > 0
+      ::Log.info { "Sending #{images.size} photos" }
+      bot.send_media_group(CHANNEL, images)
+    end
   else
     ::Log.warn { "Error with API: #{result}" }
   end
