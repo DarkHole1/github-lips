@@ -15,7 +15,7 @@ sent_images_hashes = Set(String).new
 schedule = Tasker.instance
 schedule.every(30.seconds) do
   ::Log.info { "Posting to channel" }
-  result = api.search "extension:jpg extension:png", per_page: 100, sort: "indexed"
+  result = api.search "extension:jpg extension:png size:>1000", per_page: 100, sort: "indexed"
   case result
   when CodeSearch::Result
     ::Log.info { "Get #{result.items.size} images" }
