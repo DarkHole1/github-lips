@@ -14,16 +14,18 @@ bot = Tourmaline::Client.new bot_token: ENV["BOT_TOKEN"]
 schedule = Tasker.instance
 schedule.every(30.seconds) do
   ::Log.info { "Posting to channel" }
-  result = api.search "extension:jpg extension:png", per_page: 1, sort: "indexed"
+  result = api.search "extension:jpg extension:png", per_page: 100, sort: "indexed"
   case result
   when CodeSearch::Result
-    image = result.items[0]
-    caption = Section.new(
-      TLink.new("original image", image.html_url),
-      TLink.new("repository", image.repository.html_url),
-      indent: 0
-    )
-    bot.send_photo(CHANNEL, image.raw_url, caption: caption.to_md)
+    ::Log.info { "Get #{result.items.size} images" }
+    result.items.each { |image|
+      caption = Section.new(
+        TLink.new("original image", image.html_url),
+        TLink.new("repository", image.repository.html_url),
+        indent: 0
+      )
+      bot.send_photo(CHANNEL, image.raw_url, caption: caption.to_md)
+    }
   else
     ::Log.warn { "Error with API: #{result}" }
   end
