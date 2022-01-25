@@ -31,7 +31,7 @@ schedule.every(30.seconds) do
         TLink.new("repository", image.repository.html_url),
         indent: 0
       )
-      bot.send_photo(CHANNEL, image.raw_url, caption: caption.to_md)
+      bot.send_photo(CHANNEL, image.raw_url, caption: caption.to_html, parse_mode: :html)
     }
   else
     ::Log.warn { "Error with API: #{result}" }
