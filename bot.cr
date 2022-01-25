@@ -13,7 +13,7 @@ bot = Tourmaline::Client.new bot_token: ENV["BOT_TOKEN"]
 sent_images_hashes = Set(String).new
 
 schedule = Tasker.instance
-schedule.every(30.seconds) do
+schedule.every(60.seconds) do
   ::Log.info { "Posting to channel" }
   result = api.search "extension:jpg extension:png size:>1000", per_page: 100, sort: "indexed"
   case result
@@ -21,9 +21,7 @@ schedule.every(30.seconds) do
     ::Log.info { "Get #{result.items.size} images" }
     images = Array(Tourmaline::InputMediaPhoto).new
     result.items.each { |image|
-      if sent_images_hashes.includes? image.sha
-        next
-      end
+      next if sent_images_hashes.includes? image.sha
       sent_images_hashes << image.sha
 
       caption = Section.new(
@@ -31,12 +29,13 @@ schedule.every(30.seconds) do
         TLink.new("repository", image.repository.html_url),
         indent: 0
       )
-      # bot.send_photo(CHANNEL, image.raw_url, caption: caption.to_html, parse_mode: :html)
-      images << Tourmaline::InputMediaPhoto.new(image.raw_url, caption: caption.to_html, parse_mode: :html)
+      images << Tourmaline::InputMediaPhoto.new(image.raw_url, caption: caption.to_html, parse_mode: Tourmaline::ParseMode::HTML)
     }
     if images.size > 0
       ::Log.info { "Sending #{images.size} photos" }
-      bot.send_media_group(CHANNEL, images)
+      images.by_slice(10) { |some_images|
+        bot.send_media_group(CHANNEL, some_images)
+      }
     end
   else
     ::Log.warn { "Error with API: #{result}" }
