@@ -10,7 +10,11 @@ api = CodeSearch::API.new ENV["GH_USER"], ENV["GH_TOKEN"]
 CHANNEL = ENV["CHANNEL"].to_i64
 
 bot = Tourmaline::Client.new bot_token: ENV["BOT_TOKEN"]
-sent_images_hashes = Set(String).new
+sent_images_hashes = Set(String).from_json(File.read("sent_image_hashes.json"))
+
+at_exit {
+  File.write("sent_image_hashes.json", sent_images_hashes.to_json)
+}
 
 schedule = Tasker.instance
 schedule.every(60.seconds) do
