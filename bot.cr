@@ -10,6 +10,7 @@ api = CodeSearch::API.new ENV["GH_USER"], ENV["GH_TOKEN"]
 CHANNEL = ENV["CHANNEL"].to_i64
 
 bot = Tourmaline::Client.new bot_token: ENV["BOT_TOKEN"]
+sent_images_hashes = Set(String).new
 
 schedule = Tasker.instance
 schedule.every(30.seconds) do
@@ -19,6 +20,12 @@ schedule.every(30.seconds) do
   when CodeSearch::Result
     ::Log.info { "Get #{result.items.size} images" }
     result.items.each { |image|
+      if sent_images_hashes.includes? image.sha
+        ::Log.info { "Drop image (sha) #{image.path}"}
+        next
+      end
+      sent_images_hashes << image.sha
+
       caption = Section.new(
         TLink.new("original image", image.html_url),
         TLink.new("repository", image.repository.html_url),
