@@ -33,7 +33,7 @@ schedule.every(60.seconds) do
     }
     if images.size > 0
       ::Log.info { "Sending #{images.size} photos" }
-      images.by_slice(10) { |some_images|
+      images.each_slice(10) { |some_images|
         bot.send_media_group(CHANNEL, some_images)
       }
     end
