@@ -16,8 +16,7 @@ at_exit {
   File.write("sent_image_hashes.json", sent_images_hashes.to_json)
 }
 
-schedule = Tasker.instance
-schedule.every(1.minutes) do
+def task(api, sent_images_hashes, bot)
   ::Log.info { "Posting to channel" }
   begin
     result = api.search "extension:jpg extension:png size:>5000", per_page: 100, sort: "indexed"
@@ -50,12 +49,18 @@ schedule.every(1.minutes) do
           ::Log.error(exception: e) { "Can't send :(" }
         end
         ::Log.info { "Sent some images #{some_images.size}" }
-        sleep 30.seconds
+        sleep 60.seconds
       }
     end
   else
     ::Log.warn { "Error with API: #{result}" }
   end
+end
+
+task(api, sent_images_hashes, bot)
+
+Tasker.every(5.minutes) do
+  task(api, sent_images_hashes, bot)
 end
 
 bot.poll
