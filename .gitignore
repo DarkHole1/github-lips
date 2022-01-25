@@ -1,2 +1,3 @@
 lib/
 .env
+sent_image_hashes.json
