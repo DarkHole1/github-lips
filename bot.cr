@@ -2,6 +2,7 @@ require "tourmaline"
 require "tourmaline/extra/format"
 require "tasker"
 require "./code_search_api"
+require "./persistent"
 
 include Tourmaline::Format
 TLink = Tourmaline::Format::Link
@@ -10,17 +11,18 @@ api = CodeSearch::API.new ENV["GH_USER"], ENV["GH_TOKEN"]
 CHANNEL = ENV["CHANNEL"].to_i64
 
 bot = Tourmaline::Client.new bot_token: ENV["BOT_TOKEN"]
-if File.exists? "sent_image_hashes.json"
-  sent_images_hashes = Set(String).from_json(File.read("sent_image_hashes.json"))
-else
-  sent_images_hashes = Set(String).new
-end
+# if File.exists? "sent_image_hashes.json"
+#   sent_image_hashes = Set(String).from_json(File.read("sent_image_hashes.json"))
+# else
+#   sent_image_hashes = Set(String).new
+# end
+sent_image_hashes = Persistent(Set(String)).new "sent_image_hashes.json"
 
-at_exit {
-  File.write("sent_image_hashes.json", sent_images_hashes.to_json)
-}
+# at_exit {
+#   File.write("sent_image_hashes.json", sent_image_hashes.to_json)
+# }
 
-def task(api, sent_images_hashes, bot)
+def task(api, sent_image_hashes, bot)
   ::Log.info { "Posting to channel" }
   begin
     result = api.search "extension:jpg extension:png size:>5000", per_page: 10, sort: "indexed"
@@ -33,8 +35,8 @@ def task(api, sent_images_hashes, bot)
     ::Log.info { "Get #{result.items.size} images" }
     images = Array(Tourmaline::InputMediaPhoto).new
     result.items.each { |image|
-      next if sent_images_hashes.includes? image.sha
-      sent_images_hashes << image.sha
+      next if sent_image_hashes.includes? image.sha
+      sent_image_hashes << image.sha
 
       caption = Section.new(
         TLink.new("original image", image.html_url),
@@ -61,10 +63,10 @@ def task(api, sent_images_hashes, bot)
   end
 end
 
-task(api, sent_images_hashes, bot)
+task(api, sent_image_hashes, bot)
 
 Tasker.every(10.minutes) do
-  task(api, sent_images_hashes, bot)
+  task(api, sent_image_hashes, bot)
 end
 
 bot.poll
