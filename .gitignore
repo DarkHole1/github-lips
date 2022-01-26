@@ -2,3 +2,4 @@ lib/
 libphash/
 .env
 sent_image_hashes.json
+repo_count.json

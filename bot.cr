@@ -11,18 +11,10 @@ api = CodeSearch::API.new ENV["GH_USER"], ENV["GH_TOKEN"]
 CHANNEL = ENV["CHANNEL"].to_i64
 
 bot = Tourmaline::Client.new bot_token: ENV["BOT_TOKEN"]
-# if File.exists? "sent_image_hashes.json"
-#   sent_image_hashes = Set(String).from_json(File.read("sent_image_hashes.json"))
-# else
-#   sent_image_hashes = Set(String).new
-# end
 sent_image_hashes = Persistent(Set(String)).new "sent_image_hashes.json"
+repo_count = Persistent(Hash(String, Int32)).new "repo_count.json"
 
-# at_exit {
-#   File.write("sent_image_hashes.json", sent_image_hashes.to_json)
-# }
-
-def task(api, sent_image_hashes, bot)
+def task(api, sent_image_hashes, bot, repo_count)
   ::Log.info { "Posting to channel" }
   begin
     result = api.search "extension:jpg extension:png size:>5000", per_page: 10, sort: "indexed"
@@ -35,6 +27,9 @@ def task(api, sent_image_hashes, bot)
     ::Log.info { "Get #{result.items.size} images" }
     images = Array(Tourmaline::InputMediaPhoto).new
     result.items.each { |image|
+      next if repo_count.fetch(image.repository.full_name, 0) >= 5
+      repo_count[image.repository.full_name] = repo_count.fetch(image.repository.full_name, 0) + 1
+
       next if sent_image_hashes.includes? image.sha
       sent_image_hashes << image.sha
 
@@ -63,10 +58,10 @@ def task(api, sent_image_hashes, bot)
   end
 end
 
-task(api, sent_image_hashes, bot)
+task(api, sent_image_hashes, bot, repo_count)
 
-Tasker.every(10.minutes) do
-  task(api, sent_image_hashes, bot)
+Tasker.every(2.minutes) do
+  task(api, sent_image_hashes, bot, repo_count)
 end
 
 bot.poll
