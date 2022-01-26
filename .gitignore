@@ -1,3 +1,4 @@
 lib/
+libphash/
 .env
 sent_image_hashes.json

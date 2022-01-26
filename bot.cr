@@ -10,7 +10,11 @@ api = CodeSearch::API.new ENV["GH_USER"], ENV["GH_TOKEN"]
 CHANNEL = ENV["CHANNEL"].to_i64
 
 bot = Tourmaline::Client.new bot_token: ENV["BOT_TOKEN"]
-sent_images_hashes = Set(String).from_json(File.read("sent_image_hashes.json"))
+if File.exists? "sent_image_hashes.json"
+  sent_images_hashes = Set(String).from_json(File.read("sent_image_hashes.json"))
+else
+  sent_images_hashes = Set(String).new
+end
 
 at_exit {
   File.write("sent_image_hashes.json", sent_images_hashes.to_json)
@@ -19,7 +23,7 @@ at_exit {
 def task(api, sent_images_hashes, bot)
   ::Log.info { "Posting to channel" }
   begin
-    result = api.search "extension:jpg extension:png size:>5000", per_page: 100, sort: "indexed"
+    result = api.search "extension:jpg extension:png size:>5000", per_page: 10, sort: "indexed"
   rescue e
     ::Log.error(exception: e) { "Can't search :(" }
   end
@@ -59,7 +63,7 @@ end
 
 task(api, sent_images_hashes, bot)
 
-Tasker.every(5.minutes) do
+Tasker.every(10.minutes) do
   task(api, sent_images_hashes, bot)
 end
 
