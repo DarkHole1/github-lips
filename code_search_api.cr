@@ -15,6 +15,8 @@ module CodeSearch
     def initialize(user : String, token : String)
       @client = HTTP::Client.new API_HOST, tls: true
       @client.basic_auth(user, token)
+      # See https://github.com/crystal-lang/crystal/issues/11354
+      @client.compress = false
     end
 
     def search(q : String, sort : String? = nil, order : String? = nil, per_page : Int? = nil, page : Int? = nil)
@@ -29,6 +31,11 @@ module CodeSearch
         }
       )
       response = @client.get path.to_s, headers: HEADERS
+
+      # ::Log.info { "Compres: #{@client.compress?}" }
+      # ::Log.info { "Status #{response.status}" }
+      # ::Log.info { "Headers: #{response.headers}" }
+      # ::Log.info { "Body #{response.body}" }
 
       case response.status
       when .ok?
