@@ -2,22 +2,19 @@ require "tourmaline"
 require "tourmaline/extra/format"
 require "tasker"
 require "./code_search_api"
-require "./persistent"
+require "./config.cr"
 
 include Tourmaline::Format
 TLink = Tourmaline::Format::Link
 
-api = CodeSearch::API.new ENV["GH_USER"], ENV["GH_TOKEN"]
-CHANNEL = ENV["CHANNEL"].to_i64
+config = Config.from_json(File.read("./config.json"))
+api = CodeSearch::API.new config.github.user, config.github.token
+bot = Tourmaline::Client.new bot_token: config.telegram.token
 
-bot = Tourmaline::Client.new bot_token: ENV["BOT_TOKEN"]
-sent_image_hashes = Persistent(Set(String)).new "sent_image_hashes.json"
-repo_count = Persistent(Hash(String, Int32)).new "repo_count.json"
-
-def task(api, sent_image_hashes, bot, repo_count)
+def task(api, bot, config, hashes)
   ::Log.info { "Posting to channel" }
   begin
-    result = api.search "extension:jpg extension:png size:>5000", per_page: 10, sort: "indexed"
+    result = api.search "extension:jpg extension:png size:>5000", per_page: 20, sort: "indexed"
   rescue e
     ::Log.error(exception: e) { "Can't search :(" }
   end
@@ -27,11 +24,8 @@ def task(api, sent_image_hashes, bot, repo_count)
     ::Log.info { "Get #{result.items.size} images" }
     images = Array(Tourmaline::InputMediaPhoto).new
     result.items.each { |image|
-      next if repo_count.fetch(image.repository.full_name, 0) >= 5
-      repo_count[image.repository.full_name] = repo_count.fetch(image.repository.full_name, 0) + 1
-
-      next if sent_image_hashes.includes? image.sha
-      sent_image_hashes << image.sha
+      next if hashes.includes? image.sha
+      hashes << image.sha
 
       caption = Section.new(
         TLink.new("original image", image.html_url),
@@ -45,7 +39,7 @@ def task(api, sent_image_hashes, bot, repo_count)
       images.each_slice(10) { |some_images|
         ::Log.info { "Starting sending #{some_images.size}" }
         begin
-          bot.send_media_group(CHANNEL, some_images)
+          bot.send_media_group(config.telegram.channel, some_images)
         rescue e
           ::Log.error(exception: e) { "Can't send :(" }
         end
@@ -58,10 +52,11 @@ def task(api, sent_image_hashes, bot, repo_count)
   end
 end
 
-task(api, sent_image_hashes, bot, repo_count)
+hashes = Set(String).new
 
+task(api, bot, config, hashes)
 Tasker.every(2.minutes) do
-  task(api, sent_image_hashes, bot, repo_count)
+  task(api, bot, config, hashes)
 end
 
 bot.poll
