@@ -59,4 +59,4 @@ Tasker.every(2.minutes) do
   task(api, bot, config, hashes)
 end
 
-bot.poll
+# bot.poll
