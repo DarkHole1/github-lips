@@ -19,4 +19,5 @@ class TelegramConfig
 
   getter token : String
   getter channel : Int64
+  getter best_channel : Int64
 end

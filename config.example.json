@@ -5,7 +5,8 @@
     },
     "telegram": {
         "token": "XXXXXXXXX",
-        "channel": -1001789121101
+        "channel": -1001789121101,
+        "best_channel": -1001164067689
     },
     "general": {
         "duplicates": false,
