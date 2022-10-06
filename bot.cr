@@ -55,8 +55,9 @@ end
 hashes = Set(String).new
 
 task(api, bot, config, hashes)
-Tasker.every(2.minutes) do
+t = Tasker.every(2.minutes) do
   task(api, bot, config, hashes)
 end
 
+t.each { ::Log.info { "Task ended" } }
 # bot.poll
