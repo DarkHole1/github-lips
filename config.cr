@@ -5,6 +5,7 @@ class Config
 
   getter github : GithubConfig
   getter telegram : TelegramConfig
+  getter general : GeneralConfig
 end
 
 class GithubConfig
@@ -20,4 +21,12 @@ class TelegramConfig
   getter token : String
   getter channel : Int64
   getter best_channel : Int64
+end
+
+class GeneralConfig
+  include JSON::Serializable
+
+  getter duplicates : Bool
+  getter search : String
+  getter results : Int32
 end
