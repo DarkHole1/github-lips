@@ -48,6 +48,7 @@ module CodeSearch
       when .unprocessable_entity?
         ValidationFailed.from_json response.body
       when .forbidden?
+        # pp! response.body, response.headers, response.headers["Retry-After"]?
         Forbidden.from_json response.body
       else
         ::Log.error { "Unknown status: #{response.status}, #{response.body}" }
