@@ -15,6 +15,8 @@ module CodeSearch
     def initialize(user : String, token : String)
       @client = HTTP::Client.new API_HOST, tls: true
       @client.basic_auth(user, token)
+      @client.read_timeout = 10.seconds
+      @client.write_timeout = 10.seconds
       # See https://github.com/crystal-lang/crystal/issues/11354
       @client.compress = false
     end
